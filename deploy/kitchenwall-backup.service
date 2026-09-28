@@ -1,0 +1,7 @@
+[Unit]
+Description=Back up the Kitchenwall database
+
+[Service]
+Type=oneshot
+User=kitchenwall
+ExecStart=/usr/bin/python3 /home/kitchenwall/kitchenwall/deploy/backup.py

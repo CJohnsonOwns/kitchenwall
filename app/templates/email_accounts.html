@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Email accounts — Kitchenwall{% endblock %}
+{% block content %}
+<a href="/inbox" class="back-link">← Back to inbox</a>
+<div class="page-head"><h1>Email accounts</h1></div>
+
+{% if error %}<p class="notice">{{ error }}</p>{% endif %}
+{% if accounts | selectattr("needs_reconnect") | list %}
+  <p class="notice">Google accounts marked <b>Reconnect</b> were connected before the dashboard could change mail. Sign in with Google again once, through the SSH tunnel as before, and archive, delete, star and read state will reach Gmail. Nothing else about the account changes.</p>
+{% endif %}
+
+<div class="settings-grid">
+  <section class="card">
+    <div class="card-head"><h2>Connected accounts</h2></div>
+    {% if accounts %}
+      <ul class="plain-rows">
+        {% for a in accounts %}
+          <li>
+            <span class="acct-dot" style="--acct: {{ a.color }};"></span>
+            <div class="info">
+              <span class="name">{{ a["display_name"] }}</span>
+              <span class="small muted">
+                {{ a["email_address"] }} · {{ "Google sign-in" if a["auth_method"] == "oauth" else "app password" }}
+                {% if a["last_synced_at"] %} · last synced {{ a["last_synced_at"][:16]|replace("T", " ") }}{% endif %}
+              </span>
+            </div>
+            {% if a.needs_reconnect %}<a href="/inbox/oauth/start" class="btn-link subtle" title="Grants permission to archive, delete, star and change read state">Reconnect</a>{% endif %}
+            <form method="post" action="/inbox/accounts/{{ a['id'] }}/delete" data-confirm="Disconnect this account?">
+              <button type="submit" class="ghost danger-text">Disconnect</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">No accounts connected yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Sign in with Google</h2></div>
+    {% if google_configured %}
+      <p class="hint">
+        Google's recommended way to connect. This only works when the dashboard is opened at
+        <code>http://127.0.0.1:8000</code> on a PC with an SSH tunnel to the server (see the README), not from a phone on WiFi.
+      </p>
+      <div class="form-actions">
+        <a href="/inbox/oauth/start" class="btn-link">Sign in with Google</a>
+      </div>
+    {% else %}
+      <p class="hint">
+        Not set up yet. This needs a free Google Cloud OAuth client (client ID and secret) added to <code>.env</code>
+        as <code>GOOGLE_CLIENT_ID</code> / <code>GOOGLE_CLIENT_SECRET</code>. See the README for exact steps.
+      </p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Connect with an app password</h2></div>
+    <p class="hint">
+      Needs 2-Step Verification on the Google account, then an App Password from
+      <strong>myaccount.google.com/apppasswords</strong>. Some accounts (Workspace, Advanced Protection) never get this option; use Sign in with Google instead.
+    </p>
+    <form method="post" action="/inbox/accounts" class="stacked">
+      <label>Gmail address<input type="email" name="email_address" required></label>
+      <label>Display name (optional)<input type="text" name="display_name" placeholder="e.g. House"></label>
+      <label>App password<input type="password" name="app_password" required autocomplete="off"></label>
+      <div class="form-actions"><button type="submit">Connect</button></div>
+    </form>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+/* ---- Mail rows ---- */
+.mail-list { list-style: none; margin: 0; padding: 0; }
+.mail-item { position: relative; }
+.mail-row {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+  padding: 10px 10px; margin: 0 -10px; border-radius: 12px; min-height: 60px;
+  text-decoration: none; color: inherit;
+  transition: background var(--dur-fast) var(--ease-linear);
+}
+.mail-row:hover { background: var(--surface-2); }
+.avatar {
+  position: relative; width: 40px; height: 40px; border-radius: 50%; flex: none;
+  background: var(--surface-3); color: var(--accent-strong);
+  display: grid; place-items: center; font-weight: 800; font-size: .95rem;
+}
+.avatar.big { width: 52px; height: 52px; font-size: 1.2rem; }
+.avatar i { position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; background: var(--acct); border: 2px solid var(--surface); }
+.mail-row.unread .avatar::after { content: ""; position: absolute; left: -4px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent-strong); box-shadow: 0 0 0 3px var(--surface); }
+.mail-body { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mail-from { font-weight: 700; font-size: .95rem; display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.mail-from .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-from .acct { font-weight: 500; color: var(--ink-mute); font-size: .76rem; white-space: nowrap; }
+.mail-row.read .mail-from { font-weight: 500; color: var(--ink-soft); }
+.mail-subject { font-size: .92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-row.read .mail-subject { color: var(--ink-soft); }
+.mail-snip { font-size: .8rem; color: var(--ink-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-time { font-size: .76rem; color: var(--ink-soft); white-space: nowrap; align-self: start; padding-top: 4px; }
+.acct-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--acct); flex: none; }

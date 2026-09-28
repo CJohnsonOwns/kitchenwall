@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ current.name }} — Kitchenwall{% endblock %}
+{% macro row(item) -%}
+  <li class="big-item list-item{% if item.checked %} is-checked{% endif %}" data-id="{{ item.id }}">
+    <button type="button" class="tick{% if item.checked %} on{% endif %}" data-act="toggle"
+            aria-label="{{ 'Put back on the list' if item.checked else 'Got it' }}: {{ item.text }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></button>
+    <button type="button" class="name" data-act="edit" title="Edit">{{ item.text }}</button>
+    {% if not item.checked %}<button type="button" class="ghost icon row-x" data-act="delete" aria-label="Delete {{ item.text }}">×</button>{% else %}<span></span>{% endif %}
+  </li>
+{%- endmacro %}
+{% block content %}
+{% set to_get = state["items"] | rejectattr("checked") | list %}
+{% set got = state["items"] | selectattr("checked") | list %}
+
+<div class="list-switch-row">
+  <nav class="seg list-switch" id="list-switch" aria-label="Lists">
+    {% for l in state.lists %}
+      <a href="/list?l={{ l.id }}" data-id="{{ l.id }}"{% if l.id == current.id %} aria-current="page"{% endif %}>
+        <span class="ls-name">{{ l.name }}</span>{% if l.to_get %}<span class="badge">{{ l.to_get }}</span>{% endif %}</a>
+    {% endfor %}
+  </nav>
+  <button type="button" class="subtle small-btn" id="list-new">+ New list</button>
+</div>
+
+<form class="list-name-form" id="list-name-form" hidden autocomplete="off">
+  <input type="text" id="list-name-input" maxlength="40" aria-label="List name" placeholder="List name, e.g. Costco" enterkeyhint="done">
+  <button type="submit" id="list-name-save">Create</button>
+  <button type="button" class="ghost" id="list-name-cancel">Cancel</button>
+</form>
+
+<div class="page-head">
+  <div><h1 id="list-title">{{ current.name }}</h1><div class="list-count" id="list-count">{{ to_get|length }} to get</div></div>
+  <div class="actions">
+    <span class="sync-dot" id="sync-dot"><i></i><span>Up to date</span></span>
+    <button type="button" class="ghost small-btn" id="list-rename">Rename</button>
+    <button type="button" class="ghost small-btn danger-text" id="list-delete"{% if state.lists|length < 2 %} hidden{% endif %}>Delete list</button>
+  </div>
+</div>
+
+<div class="list-layout" id="list" data-version="{{ state.version }}" data-list="{{ current.id }}">
+  <section class="card">
+    <form class="list-add" id="list-add" autocomplete="off">
+      <input type="text" id="list-input" name="text" maxlength="200" placeholder="Add to {{ current.name }}… (Enter)" aria-label="Add to {{ current.name }}" enterkeyhint="done">
+      <button type="submit">Add</button>
+    </form>
+    <ul class="big-list" id="list-open">{% for item in to_get %}{{ row(item) }}{% endfor %}</ul>
+    <p class="empty" id="list-empty"{% if to_get %} hidden{% endif %}>Nothing to get. Add something above.</p>
+    <p class="hint">Tap an item to edit it. Checked items move to “Got it”.</p>
+  </section>
+  <section class="card got">
+    <div class="card-head"><h2>Got it</h2><button type="button" class="subtle small-btn" id="list-clear"{% if not got %} hidden{% endif %}>Clear all</button></div>
+    <ul class="big-list" id="list-got">{% for item in got %}{{ row(item) }}{% endfor %}</ul>
+    <p class="empty" id="got-empty"{% if got %} hidden{% endif %}>Ticked items land here.</p>
+    <p class="hint">Untick to put something back on the list.</p>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden>
+  <span id="toast-text"></span>
+  <button type="button" class="ghost" id="toast-undo" hidden>Undo</button>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ static_url('list.js') }}" defer></script>{% endblock %}

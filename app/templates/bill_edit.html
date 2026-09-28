@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Edit — Kitchenwall{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Edit “{{ bill['name'] }}”</h1></div>
+<section class="card narrow">
+  <form method="post" action="/calendar/{{ bill['id'] }}/edit" class="stacked">
+    <label>Name
+      <input type="text" name="name" value="{{ bill['name'] }}" maxlength="80" required>
+    </label>
+    <div class="form-row">
+      <label>Date
+        <input type="date" name="due_date" value="{{ bill['due_date'] }}" required>
+      </label>
+      <label>Time (optional)
+        <input type="time" name="due_time" value="{{ bill['due_time'] or '' }}" title="Leave empty for an all-day item">
+      </label>
+    </div>
+    <label>Repeats
+      <select name="recurring">
+        {% for value, label in CADENCES.items() %}
+          <option value="{{ value }}" {% if bill["recurring"] == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="form-actions">
+      <button type="submit">Save</button>
+      <a href="/calendar?month={{ bill['due_date'][:7] }}&day={{ bill['due_date'] }}" class="btn-link ghost">Cancel</a>
+    </div>
+  </form>
+  <form method="post" action="/calendar/{{ bill['id'] }}/delete" data-confirm="Delete this?" class="delete-row">
+    <button type="submit" class="ghost danger-text">Delete this item</button>
+  </form>
+</section>
+{% endblock %}

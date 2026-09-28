@@ -1,0 +1,5 @@
+{# Profile picture, or the name's first letter when there isn't one. #}
+{% macro avatar(name, pic, cls="") -%}
+{% if pic %}<img class="avatar {{ cls }}" src="/share/media/{{ pic }}?size=thumb" alt="" aria-hidden="true">
+{%- else %}<span class="avatar {{ cls }}" aria-hidden="true">{{ name[:1] }}</span>{% endif %}
+{%- endmacro %}

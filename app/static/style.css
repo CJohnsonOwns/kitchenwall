@@ -1,0 +1,83 @@
+/* Kitchenwall — "Kitchen Wall" look.
+   Dark, warm, amber accent, Inter. Big tap targets so it works on a tablet
+   on the wall as well as on phones. Tokens live in :root. */
+:root {
+  --bg: #13161c;
+  --surface: #1d222b;
+  --surface-2: #262d38;
+  --surface-3: #2f3743;
+  --ink: #efe9d6;
+  --ink-soft: #a3a79f;
+  --ink-mute: #727870;
+  --accent: #d9a441;
+  --accent-strong: #f0bd5f;
+  --accent-ink: #1a1305;
+  --accent-soft: rgba(217, 164, 65, .14);
+  --accent-2: #5b8a72;
+  --good: #5b8a72;
+  --good-strong: #86bb9d;
+  --danger: #d0705f;
+  --danger-soft: rgba(208, 112, 95, .16);
+  --rain: #86b6dc;
+  --line: #2c3440;
+  --line-soft: #242b35;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ease: cubic-bezier(.34, 1.56, .64, 1);
+  --ease-linear: cubic-bezier(.4, 0, .2, 1);
+  --dur: 260ms;
+  --dur-fast: 140ms;
+  --shadow: 0 14px 34px rgba(0, 0, 0, .45);
+  --shadow-hover: 0 12px 28px rgba(0, 0, 0, .4);
+  --head-h: 68px;
+  color-scheme: dark;
+}
+
+@view-transition { navigation: auto; }
+
+* { box-sizing: border-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+/* Android Chrome "font boosting" enlarges text in wide blocks on its own; turn it off
+   so phones get the sizes set here. */
+html { height: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+a, button, input, select, textarea, label, summary { -webkit-tap-highlight-color: transparent; }
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--ink);
+  background:
+    radial-gradient(900px 500px at 90% -10%, rgba(217, 164, 65, .10), transparent 60%),
+    radial-gradient(700px 400px at -10% 100%, rgba(91, 138, 114, .08), transparent 60%),
+    var(--bg);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+/* A fixed background repaints on every scroll frame on phones; keep it for mouse screens only. */
+@media (hover: hover) and (pointer: fine) { body { background-attachment: fixed; } }
+
+a { color: var(--accent-strong); }
+h1, h2, h3 { font-weight: 800; letter-spacing: -.02em; text-wrap: balance; margin: 0; }
+h1 { font-size: 2rem; }
+h2 { font-size: 1.1rem; }
+code { font-size: .9em; background: var(--surface-2); padding: 1px 6px; border-radius: 5px; }
+svg { display: block; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-soft); }
+.small { font-size: .86rem; }
+.hint { color: var(--ink-soft); font-size: .9rem; margin: 8px 0 0; line-height: 1.5; }
+.empty { color: var(--ink-soft); margin: 0; }
+.eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-mute); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.rec { width: 12px; height: 12px; color: var(--ink-mute); display: inline-block; vertical-align: -1px; margin-left: 4px; flex: none; }

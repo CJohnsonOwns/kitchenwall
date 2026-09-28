@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Whiteboard — Kitchenwall{% endblock %}
+{% block content %}
+<div class="board-top">
+  <div class="board-title">
+    <h1>Whiteboard</h1>
+    <div class="sub-tabs">
+      <button type="button" class="subtle" id="sub-tab-board" aria-pressed="true">Board</button>
+      <button type="button" class="subtle" id="sub-tab-history" aria-pressed="false">History{% if done_items %} · {{ done_items|length }}{% endif %}</button>
+    </div>
+  </div>
+  <div class="board-title-right">
+    <span class="small muted">{{ items|length }} note{{ "s" if items|length != 1 }}{% if aging_count %} · {{ aging_count }} getting old{% endif %}</span>
+    <button type="button" class="subtle" id="open-cat-manager">Categories</button>
+  </div>
+</div>
+
+<div id="board-view">
+  {% include "_board_widget.html" %}
+</div>
+
+<div id="history-view" hidden>
+  <section class="card">
+    <div class="card-head"><h2>Done</h2><span class="small muted">Restore anything you checked off by mistake.</span></div>
+    {% if done_items %}
+      <ul class="history">
+        {% for item in done_items %}
+          <li>
+            <div class="history-main">
+              <span class="history-swatch" style="background: {{ item['color'] }};"></span>
+              {% if item["photo"] %}<a href="/board/photos/{{ item['photo'] }}" target="_blank" rel="noopener"><img class="history-photo" src="/board/photos/{{ item['photo'] }}?size=thumb" alt="Photo on this note" loading="lazy"></a>{% endif %}
+              <span class="history-text">{{ item["text"] }}</span>
+              {% for cid in item["category_ids"] %}{% set c = categories_by_id[cid] %}<span class="cat-chip" style="--cat: {{ c['color'] }};">{{ c["name"] }}</span>{% endfor %}
+              {% if item["created_by"] %}<span class="small muted">— {{ item["created_by"] }}</span>{% endif %}
+            </div>
+            <div class="ops">
+              <form method="post" action="/board/items/{{ item['id'] }}/restore"><button type="submit" class="subtle">Restore</button></form>
+              <form method="post" action="/board/items/{{ item['id'] }}/delete" data-confirm="Delete this permanently?"><button type="submit" class="ghost danger-text">Delete</button></form>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">Nothing done yet. Check something off on the board and it'll show up here.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

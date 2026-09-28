@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Inbox — Kitchenwall{% endblock %}
+{% block content %}
+{% from "_composer.html" import composer %}
+{% set list_url = "/inbox?view=" ~ view ~ ("&acct=" ~ acct if acct else "") ~ ("&q=" ~ q|urlencode if q else "") %}
+<div class="page-head">
+  <div>
+    <h1>{% if view == "search" %}Search{% elif view == "starred" %}Starred{% elif view == "sent" %}Sent{% else %}Inbox{% endif %}</h1>
+    {% if accounts %}
+      <span class="sync-note"><i></i>{% if last_sync %}Checked {{ last_sync }}{% else %}Not checked yet{% endif %}{% if app_settings.mail_sync_minutes != "0" %} · refreshes every {{ app_settings.mail_sync_minutes }} min{% endif %}</span>
+    {% endif %}
+  </div>
+  <div class="actions">
+    {% if accounts %}
+      <form method="post" action="/inbox/refresh"><input type="hidden" name="next" value="{{ list_url }}"><button type="submit" class="subtle" data-busy="Checking…">Refresh now</button></form>
+      <button type="button" id="compose-open" title="New message (c)">New message</button>
+    {% endif %}
+    <a href="/inbox/accounts" class="btn-link ghost">Manage accounts</a>
+  </div>
+</div>
+
+{% for a in accounts if a.needs_reconnect %}
+  <p class="notice">{{ a.display_name }} was connected before the dashboard could change mail, so archive, delete, star and read state won't reach Gmail for it yet. <a href="/inbox/accounts">Reconnect it once</a> to fix that.</p>
+{% endfor %}
+{% if error %}<p class="notice">{{ error }}</p>{% endif %}
+{% if notice %}<p class="notice good">{{ notice }}</p>{% endif %}
+{% if sent %}<p class="notice good">Message sent.</p>{% endif %}
+
+{% if not accounts %}
+  <section class="card">
+    <p class="empty">No email accounts connected yet.</p>
+    <a class="card-link" href="/inbox/accounts">Connect a Gmail account →</a>
+  </section>
+{% else %}
+  <div class="inbox-bar">
+    <nav class="seg view-seg" aria-label="Mailbox">
+      <a href="/inbox{{ '?acct=' ~ acct if acct }}" {% if view == "inbox" %}aria-current="page"{% endif %}>Inbox{% if view_counts.inbox %} <span class="badge">{{ view_counts.inbox }}</span>{% endif %}</a>
+      <a href="/inbox?view=starred{{ '&acct=' ~ acct if acct }}" {% if view == "starred" %}aria-current="page"{% endif %}>Starred</a>
+      <a href="/inbox?view=sent{{ '&acct=' ~ acct if acct }}" {% if view == "sent" %}aria-current="page"{% endif %}>Sent</a>
+    </nav>
+    {% if accounts|length > 1 %}
+      <nav class="seg" aria-label="Account">
+        <a href="/inbox?view={{ view }}{{ '&q=' ~ q|urlencode if q }}" {% if not acct %}aria-current="page"{% endif %}>All</a>
+        {% for a in accounts %}
+          <a href="/inbox?view={{ view }}&acct={{ a.id }}{{ '&q=' ~ q|urlencode if q }}" {% if acct == a.id %}aria-current="page"{% endif %}><span class="acct-dot" style="--acct: {{ a.color }};"></span>{{ a.display_name }}</a>
+        {% endfor %}
+      </nav>
+    {% endif %}
+    <button type="button" class="subtle" id="unread-toggle" aria-pressed="false">Unread only</button>
+    <form method="get" action="/inbox" class="search-form" role="search">
+      <input type="hidden" name="view" value="search">
+      {% if acct %}<input type="hidden" name="acct" value="{{ acct }}">{% endif %}
+      <input type="search" name="q" id="mail-search" value="{{ q }}" placeholder="Search mail" title="Press Enter to search all of Gmail" aria-label="Search mail (Enter searches all of Gmail)" autocomplete="off">
+    </form>
+  </div>
+
+  {% if view == "search" %}
+    <p class="hint search-hint">{{ threads|length }} result{{ "s" if threads|length != 1 }} for “{{ q }}” across all of Gmail. <a href="/inbox{{ '?acct=' ~ acct if acct }}">Back to the inbox</a></p>
+  {% endif %}
+
+  <div class="inbox-layout" id="inbox-layout">
+    <section class="card mail-full" aria-label="Messages">
+      <div class="bulk-bar" id="bulk-bar">
+        <label class="check" title="Select all (shown)"><input type="checkbox" id="select-all" aria-label="Select all"><span></span></label>
+        <span class="bulk-count" id="bulk-count">Select</span>
+        <div class="bulk-actions" id="bulk-actions" hidden>
+          {% if view == "inbox" %}<button type="button" class="subtle" data-bulk="archive" title="Archive (e)">Archive</button>{% endif %}
+          <button type="button" class="subtle" data-bulk="trash" title="Delete (#)">Delete</button>
+          <button type="button" class="subtle" data-bulk="read" title="Mark read (Shift+I)">Mark read</button>
+          <button type="button" class="subtle" data-bulk="unread" title="Mark unread (Shift+U)">Mark unread</button>
+          <button type="button" class="subtle" data-bulk="{{ 'unstar' if view == 'starred' else 'star' }}">{{ "Unstar" if view == "starred" else "Star" }}</button>
+        </div>
+        <button type="button" class="ghost kbd-help-btn" id="kbd-help-open" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">⌨</button>
+      </div>
+
+      {% if not threads %}
+        <p class="empty mail-empty-state">
+          {% if view == "search" %}Nothing in Gmail matches that search.
+          {% elif view == "starred" %}No starred mail. Star a message to keep it handy here.
+          {% elif view == "sent" %}Nothing sent yet.
+          {% else %}Inbox zero. Nothing waiting.{% endif %}
+        </p>
+      {% else %}
+        <ul class="mail-list" id="mail-full">
+          {% for t in threads %}
+            <li class="mail-item{% if t.unread %} is-unread{% endif %}{% if open_key and open_key in t.keys_csv.split(',') %} is-open{% endif %}"
+                data-keys="{{ t.keys_csv }}" data-key="{{ t.key }}" data-url="{{ t.url }}"
+                data-unread="{{ 1 if t.unread else 0 }}" data-starred="{{ 1 if t.starred else 0 }}" data-text="{{ t.search_text }}">
+              <label class="check"><input type="checkbox" class="row-check" aria-label="Select conversation"><span></span></label>
+              <button type="button" class="star-btn{% if t.starred %} on{% endif %}" data-row-action="star" title="Star (s)" aria-label="Star" aria-pressed="{{ 'true' if t.starred else 'false' }}">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>
+              </button>
+              <a class="mail-row {{ 'unread' if t.unread else 'read' }}" href="{{ t.url }}?view={{ view }}">
+                <span class="avatar">{{ t.initial }}<i style="--acct: {{ t.account_color }};" title="{{ t.display_name }}"></i></span>
+                <span class="mail-body">
+                  <span class="mail-from"><span class="who">{{ t.participants }}</span>{% if t.count > 1 %}<span class="count">{{ t.count }}</span>{% endif %}<span class="acct">{{ t.display_name }}</span></span>
+                  <span class="mail-subject">{{ t.subject }}</span>
+                  {% if t.snippet %}<span class="mail-snip">{{ t.snippet }}</span>{% endif %}
+                </span>
+                <span class="mail-time">{{ t.display_date }}</span>
+              </a>
+              <div class="row-ops">
+                {% if view == "inbox" %}
+                  <button type="button" class="ghost" data-row-action="archive" title="Archive (e)" aria-label="Archive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></svg></button>
+                {% endif %}
+                <button type="button" class="ghost" data-row-action="trash" title="Delete (#)" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+                <button type="button" class="ghost" data-row-action="toggle-read" title="Mark read / unread" aria-label="Mark read or unread"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></button>
+              </div>
+            </li>
+          {% endfor %}
+          <li class="empty mail-empty" id="mail-none" hidden>No conversations match.</li>
+        </ul>
+      {% endif %}
+
+      {% if has_more %}
+        <form method="post" action="/inbox/older" class="load-older" id="more">
+          <input type="hidden" name="view" value="{{ view }}">
+          <input type="hidden" name="acct" value="{{ acct }}">
+          <input type="hidden" name="limit" value="{{ limit }}">
+          <button type="submit" class="subtle" data-busy="Loading…">Load older</button>
+        </form>
+      {% endif %}
+    </section>
+
+    <aside class="reading-pane card" id="reading-pane" aria-live="polite">
+      <div class="pane-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        <p>Pick a conversation to read it here.</p>
+        <p class="small muted">j / k to move, Enter to open, ? for all shortcuts</p>
+      </div>
+    </aside>
+  </div>
+
+  <dialog id="compose" class="compose-dialog compose-big" aria-label="New message">
+    <form method="dialog" class="dialog-close"><button type="submit" class="ghost" aria-label="Close">✕</button></form>
+    {{ composer(accounts, acct or accounts[0].id, list_url, form_id="new-composer") }}
+  </dialog>
+{% endif %}
+
+{% include "_mail_chrome.html" %}
+{% endblock %}
+{% block scripts %}<script type="module" src="{{ static_url('js/inbox/main.js') }}"></script>{% endblock %}

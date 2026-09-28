@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% from "_icons.html" import recur, tick_form %}
+{% block title %}Calendar — Kitchenwall{% endblock %}
+{% block content %}
+{% set this_url = "/calendar?month=" ~ month_param %}
+
+<div class="page-head">
+  <h1>Calendar</h1>
+  <div class="actions">
+    <div class="cal-nav">
+      <a href="/calendar?month={{ prev_month }}" class="btn-link subtle icon" aria-label="Previous month">‹</a>
+      <h2>{{ month_label }}</h2>
+      <a href="/calendar?month={{ next_month }}" class="btn-link subtle icon" aria-label="Next month">›</a>
+    </div>
+    {% if not is_current_month %}<a href="/calendar" class="btn-link subtle">Today</a>{% endif %}
+    <div class="seg cal-view-toggle" role="group" aria-label="View">
+      <button type="button" data-view="month" aria-pressed="true">Month</button>
+      <button type="button" data-view="agenda" aria-pressed="false">Agenda</button>
+    </div>
+  </div>
+</div>
+
+<div class="cal-layout" id="cal-layout" data-view="month">
+  <div class="cal-main">
+    <div class="cal-grid" id="cal-grid">
+      {% for wd in weekdays %}<div class="cal-wd">{{ wd }}</div>{% endfor %}
+      {% for week in grid %}
+        {% for day in week %}
+          {% if day is none %}
+            <div class="cal-cell empty"></div>
+          {% else %}
+            {% set ds = month_date.replace(day=day.day).isoformat() %}
+            <a class="cal-cell{% if ds == today.isoformat() %} today{% endif %}{% if ds < today.isoformat() %} past{% endif %}{% if ds == selected_day %} selected{% endif %}"
+               href="/calendar?month={{ month_param }}&day={{ ds }}" data-date="{{ ds }}">
+              <span class="cal-num"><span>{{ day.day }}</span></span>
+              {% for b in day.bills[:3] %}
+                <span class="chip{% if b.paid %} done{% elif b.cls == 'overdue' %} overdue{% endif %}"><span>{% if b.time_short %}<b class="chip-time">{{ b.time_short }}</b> {% endif %}{{ b.name }}</span>{% if b.recurring != "none" %}{{ recur() }}{% endif %}</span>
+              {% endfor %}
+              {% if day.bills|length > 3 %}<span class="more">+{{ day.bills|length - 3 }} more</span>{% endif %}
+            </a>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+    <section class="card upcoming-card">
+      <div class="card-head"><h2>Upcoming</h2><span class="small muted">{{ upcoming|length }} item{{ "s" if upcoming|length != 1 }}</span></div>
+      {% if upcoming %}
+        <ul class="upcoming">
+          {% for b in upcoming %}
+            <li class="{{ b.cls }}">
+              {{ tick_form(b.id, this_url) }}
+              <div class="info">
+                <span class="name">{{ b.name }}{% if b.recurring != "none" %} {{ recur() }}{% endif %}</span>
+                <span class="due {{ b.cls }}">{{ b.label }}{% if b.days > 1 %} · {{ b.short }}{% endif %}{% if b.time %} · {{ b.time }}{% endif %}{% if b.recurring != "none" %} · {{ b.cadence|lower }}{% endif %}</span>
+              </div>
+              <div class="ops">
+                <a href="/calendar/{{ b.id }}/edit" class="btn-link ghost">Edit</a>
+                <form method="post" action="/calendar/{{ b.id }}/delete" data-confirm="Delete this?">
+                  <input type="hidden" name="next" value="{{ this_url }}">
+                  <button type="submit" class="ghost danger-text">Delete</button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">Nothing upcoming. You're all caught up.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="sheet-scrim" id="scrim"></div>
+  <aside class="card day-panel" id="day-panel">
+    <div class="card-head" style="margin-bottom:2px"><h2 id="dp-title">&nbsp;</h2><button type="button" class="ghost" id="dp-close" aria-label="Close">✕</button></div>
+    <p class="sub" id="dp-sub">&nbsp;</p>
+    <ul class="day-list" id="dp-list"></ul>
+    <form class="stacked" method="post" action="/calendar" id="dp-form">
+      <input type="hidden" name="due_date" id="dp-date" value="{{ selected_day }}">
+      <input type="hidden" name="next" id="dp-next" value="{{ this_url }}&day={{ selected_day }}">
+      <label>Add to this day<input type="text" name="name" placeholder="What's happening?" maxlength="80" required></label>
+      <div class="form-row">
+        <label>Time (optional)<input type="time" name="due_time" aria-label="Time (leave empty for all day)"></label>
+        <label>Repeats
+          <select name="recurring">
+            {% for value, label in CADENCES.items() %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+      <div><button type="submit">Add</button></div>
+    </form>
+  </aside>
+</div>
+
+<script type="application/json" id="cal-data">{{ {"items": items_by_date, "selected": selected_day, "today": today.isoformat(), "month": month_param}|tojson }}</script>
+{% endblock %}
+{% block scripts %}<script src="{{ static_url('calendar.js') }}" defer></script>{% endblock %}

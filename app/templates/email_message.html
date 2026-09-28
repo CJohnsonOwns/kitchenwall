@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ thread.subject if thread else "Message" }} — Kitchenwall{% endblock %}
+{% block content %}
+{% set back_view = thread.view if thread else "inbox" %}
+<a href="/inbox{{ '?view=' ~ back_view if back_view != 'inbox' }}" class="back-link" id="back-to-list">← Back to {{ back_view if back_view in ("starred", "sent") else "inbox" }}</a>
+<div class="thread-page">
+  {% include "_thread.html" %}
+</div>
+{% include "_mail_chrome.html" %}
+{% endblock %}
+{% block scripts %}<script type="module" src="{{ static_url('js/inbox/main.js') }}"></script>{% endblock %}

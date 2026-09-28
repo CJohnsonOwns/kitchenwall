@@ -1,0 +1,23 @@
+/* ---- Cards ---- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px 20px;
+  animation: card-in var(--dur) var(--ease-linear) backwards;
+  transition: box-shadow var(--dur) var(--ease);
+}
+.card:hover { box-shadow: var(--shadow); }
+@keyframes card-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.card:nth-child(2) { animation-delay: 40ms; }
+.card:nth-child(3) { animation-delay: 80ms; }
+.card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.card-head a { font-weight: 600; text-decoration: none; }
+.card-link { display: inline-block; margin-top: 14px; font-size: .9rem; font-weight: 600; text-decoration: none; }
+.card-link:hover { text-decoration: underline; }
+
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.page-head .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.page-head .actions form { margin: 0; }
+.back-link { display: inline-block; margin-bottom: 12px; font-weight: 600; text-decoration: none; color: var(--ink-soft); }
+.back-link:hover { color: var(--ink); }

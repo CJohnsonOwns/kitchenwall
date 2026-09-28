@@ -1,0 +1,5 @@
+# Everything is deployed to Linux: keep LF line endings in the repo and on disk.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.db binary

@@ -1,0 +1,4 @@
+# PC only, never installed on the server.
+playwright   # tests/screenshot.py
+ruff         # .venv\Scripts\python.exe -m ruff check app tests deploy
+pip-audit    # .venv\Scripts\python.exe -m pip_audit -r requirements.txt

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Server — Kitchenwall{% endblock %}
+{% block content %}
+<a class="back-link" href="/settings">← Settings</a>
+<div class="page-head">
+  <h1>Server</h1>
+  <div class="actions"><span class="small muted">Checked {{ s.checked }}</span><a class="btn-link subtle" href="/settings/server?log={{ log_filter }}">Refresh</a></div>
+</div>
+{% if not s.systemd %}<p class="notice">This copy isn't running as a systemd service, so service details show as unknown.</p>{% endif %}
+
+<div class="srv-strip">
+  <div class="pillbox {{ 'good' if s.running else 'bad' }}"><span class="eyebrow">Service</span><b>{{ 'Running' if s.running else s.state|capitalize }}</b></div>
+  <div class="pillbox"><span class="eyebrow">Up for</span><b>{{ s.uptime }}</b></div>
+  <div class="pillbox {{ 'good' if not s.errors_24h else 'bad' }}"><span class="eyebrow">Problems, 24h</span><b>{{ s.errors_24h or 'None' }}</b></div>
+  <div class="pillbox"><span class="eyebrow">Version</span><b>{{ s.version }}</b></div>
+  <div class="pillbox {{ 'good' if s.backup_fresh else 'warn' }}"><span class="eyebrow">Last backup</span><b>{{ s.newest_backup_when }}</b></div>
+  <div class="pillbox"><span class="eyebrow">Disk free</span><b>{{ s.disk_free }}</b></div>
+</div>
+
+<div class="srv-grid">
+  <section class="card">
+    <div class="card-head"><h2>App</h2></div>
+    <dl class="kv">
+      <dt>Status</dt><dd class="{{ 'good' if s.running else 'bad' }}">{{ s.state }}{% if s.substate %} / {{ s.substate }}{% endif %}</dd>
+      <dt>Started</dt><dd>{{ s.started }}</dd>
+      <dt>Crash restarts</dt><dd>{{ s.restarts }}</dd>
+      <dt>Memory</dt><dd>{{ s.memory }}</dd>
+      <dt>Database</dt><dd>{{ s.db_size }}</dd>
+      <dt>Python</dt><dd>{{ s.python }}</dd>
+    </dl>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Version</h2></div>
+    <dl class="kv">
+      <dt>Running</dt><dd>{{ s.version }}{% if s.version_subject %}<div class="sub">{{ s.version_subject }}</div>{% endif %}</dd>
+      {% if s.has_deploy_record %}
+      <dt>Deployed</dt><dd>{{ s.deployed }}</dd>
+      <dt>Rollback points</dt><dd>{{ s.rollbacks }}</dd>
+      {% endif %}
+    </dl>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Backups &amp; mail</h2></div>
+    <dl class="kv">
+      <dt>Nightly backups kept</dt><dd>{{ s.backups }} of 30</dd>
+      <dt>Newest</dt><dd>{{ s.newest_backup }}</dd>
+      <dt>Next backup</dt><dd>{{ s.next_backup }}</dd>
+      <dt>Mail check</dt><dd>{{ s.mail_every }}</dd>
+      <dt>Last mail sync</dt><dd>{{ s.last_sync }}</dd>
+    </dl>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Secrets in .env</h2></div>
+    <dl class="kv">
+      {% for label, ok, note in s.secrets %}
+        <dt>{{ label }}</dt><dd class="{{ 'good' if ok else 'warn' }}">{{ note or ('set' if ok else 'not set') }}</dd>
+      {% endfor %}
+    </dl>
+    <p class="hint">Only whether each is set. Values are never shown.</p>
+  </section>
+
+  <section class="card wide">
+    <div class="card-head"><h2>Log</h2>
+      <div class="seg" role="group" aria-label="Which log lines">
+        <a href="/settings/server?log=all"{% if log_filter == 'all' %} aria-current="page"{% endif %}>Everything</a>
+        <a href="/settings/server?log=problems"{% if log_filter == 'problems' %} aria-current="page"{% endif %}>Problems only</a>
+      </div>
+    </div>
+    {% if log_rows is none %}
+      <p class="empty">The log isn't readable from this copy of the app.</p>
+    {% elif not log_rows %}
+      <p class="empty">{{ 'No problems logged recently.' if log_filter == 'problems' else 'No log lines yet.' }}</p>
+    {% else %}
+<pre class="logbox" id="logbox">{% for r in log_rows|reverse %}<span{% if r.problem %} class="err"{% endif %}>{{ r.time }} {{ r.text }}</span>
+{% endfor %}</pre>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

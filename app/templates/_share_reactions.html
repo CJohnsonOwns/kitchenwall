@@ -1,0 +1,30 @@
+{# A post's Like / React bar and who reacted. Rendered inside share.html and,
+   on its own, as the answer to a reaction tap from share.js. #}
+<div class="post-reactions" id="rx-{{ p.id }}">
+  {% if p.rx.like_text or p.rx.chips %}
+  <div class="rx-summary">
+    {% if p.rx.like_text %}<span class="rx-likes"><span aria-hidden="true">👍</span> {{ p.rx.like_text }}</span>{% endif %}
+    {% for c in p.rx.chips %}<span class="rx-chip{% if c.mine %} mine{% endif %}" title="{{ c.names }}"><span aria-hidden="true">{{ c.emoji }}</span> {{ c.names }}</span>{% endfor %}
+  </div>
+  {% endif %}
+  {% if me %}
+  <div class="rx-bar">
+    <form method="post" action="/share/posts/{{ p.id }}/react" class="rx-form">
+      <input type="hidden" name="next" value="{{ here }}">
+      <button type="submit" name="emoji" value="👍" class="rx-like{% if p.rx.liked %} on{% endif %}" aria-pressed="{{ 'true' if p.rx.liked else 'false' }}">
+        <svg viewBox="0 0 24 24" fill="{{ 'currentColor' if p.rx.liked else 'none' }}" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3Zm0 0 4-7a2.5 2.5 0 0 1 2.5 2.8L13 9h6a2 2 0 0 1 2 2.3l-1.3 7.6A2.5 2.5 0 0 1 17.2 21H7"/></svg>
+        {{ "Liked" if p.rx.liked else "Like" }}
+      </button>
+    </form>
+    <details class="rx-pick">
+      <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg> React</summary>
+      <form method="post" action="/share/posts/{{ p.id }}/react" class="rx-pop rx-form">
+        <input type="hidden" name="next" value="{{ here }}">
+        {% for e in reactions %}
+        <button type="submit" name="emoji" value="{{ e }}" class="{% if e in p.rx.mine %}on{% endif %}" aria-pressed="{{ 'true' if e in p.rx.mine else 'false' }}" aria-label="React {{ e }}">{{ e }}</button>
+        {% endfor %}
+      </form>
+    </details>
+  </div>
+  {% endif %}
+</div>

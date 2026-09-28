@@ -1,0 +1,11 @@
+# Never commit: live data, secrets, local environment
+.venv/
+data/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+*.db
+*.log
+proc_id.txt

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Settings — Kitchenwall{% endblock %}
+{% block content %}
+{% macro seg(key, options) -%}
+  <form method="post" action="/settings/pref" class="seg">
+    <input type="hidden" name="key" value="{{ key }}">
+    {% for value, label in options %}
+      <button type="submit" name="value" value="{{ value }}" aria-pressed="{{ 'true' if app_settings[key] == value else 'false' }}">{{ label }}</button>
+    {% endfor %}
+  </form>
+{%- endmacro %}
+{% macro sel(key, options) -%}
+  <form method="post" action="/settings/pref" class="pref-select">
+    <input type="hidden" name="key" value="{{ key }}">
+    <select name="value" data-autosubmit aria-label="{{ key|replace('_', ' ') }}">
+      {% for value, label in options %}<option value="{{ value }}" {% if app_settings[key] == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </form>
+{%- endmacro %}
+
+<div class="page-head"><h1>Settings</h1></div>
+
+{% if error %}<p class="notice">{{ error }}</p>{% endif %}
+{% if saved %}<p class="notice good">{{ "Password changed. Your other devices are signed out." if saved == "pw" else "Saved." }}</p>{% endif %}
+
+<div class="settings-grid">
+  <section class="card">
+    <div class="card-head"><h2>Weather</h2></div>
+    <div class="setting">
+      <div><div class="lbl">Location</div><div class="desc">{% if current_location %}{{ current_location }}{% else %}Not set yet. The weather needs a location.{% endif %}</div></div>
+      <form method="post" action="/settings/location" class="inline">
+        <input type="text" name="location" placeholder="City, state or zip" required aria-label="Location">
+        <button type="submit" class="subtle">Save</button>
+      </form>
+    </div>
+    <div class="setting">
+      <div><div class="lbl">Units</div></div>
+      {{ seg("units", [("f", "°F · mph"), ("c", "°C · km/h")]) }}
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Calendar</h2></div>
+    <div class="setting">
+      <div><div class="lbl">Week starts on</div></div>
+      {{ seg("week_start", [("sun", "Sunday"), ("mon", "Monday")]) }}
+    </div>
+    <div class="setting">
+      <div><div class="lbl">Home page looks ahead</div><div class="desc">How far the “next days” list on the home page reaches</div></div>
+      {{ sel("lookahead_days", [("7", "7 days"), ("14", "14 days"), ("30", "30 days")]) }}
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Inbox</h2><a href="/inbox/accounts" class="small">Manage accounts →</a></div>
+    <div class="setting">
+      <div><div class="lbl">Check for new mail</div><div class="desc">Runs on the server even with nobody looking</div></div>
+      {{ sel("mail_sync_minutes", [("15", "Every 15 minutes"), ("30", "Every 30 minutes"), ("60", "Every hour"), ("0", "Only when I press Refresh")]) }}
+    </div>
+    <div class="setting">
+      <div><div class="lbl">Accounts</div><div class="desc">{% if accounts %}{% for a in accounts %}{{ a.display_name }}{% if not loop.last %} · {% endif %}{% endfor %}{% else %}None connected{% endif %}</div></div>
+      <a href="/inbox/accounts" class="btn-link subtle">Manage</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Display mode</h2></div>
+    <p class="hint" style="margin-top:0">The Display button in the header hides the controls for a tablet on the wall. The page reloads itself so the weather and lists stay current.</p>
+    <div class="setting">
+      <div><div class="lbl">Reload while in Display mode</div></div>
+      {{ sel("display_refresh_minutes", [("5", "Every 5 minutes"), ("15", "Every 15 minutes"), ("0", "Never")]) }}
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Whiteboard</h2></div>
+    <div class="setting">
+      <div><div class="lbl">Categories</div><div class="desc">{% if categories %}{% for c in categories %}{{ c.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}None yet{% endif %}</div></div>
+      <a href="/whiteboard#categories" class="btn-link subtle">Edit</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Server</h2></div>
+    <div class="setting">
+      <div><div class="lbl">Health, backups and log</div><div class="desc">What the server is doing right now. View only.</div></div>
+      <a href="/settings/server" class="btn-link subtle">Open</a>
+    </div>
+  </section>
+
+  <section class="card" id="this-device">
+    <div class="card-head"><h2>This device</h2></div>
+    <div class="setting">
+      <div><div class="lbl">Signed in as {{ me.display_name if me else "Household" }}</div>
+        <div class="desc">{% if me %}Log out to switch person.{% else %}Shared login for the wall screen. It can see everything; posting on Sharing needs your own login.{% endif %}</div></div>
+      <form method="post" action="/logout"><button type="submit" class="subtle">Log out</button></form>
+    </div>
+    {% if me %}
+    <div class="setting avatar-setting">
+      {% from "_avatar.html" import avatar %}{{ avatar(me.display_name, me.avatar, "big") }}
+      <div style="flex:1;min-width:160px"><div class="lbl">Profile picture</div><div class="desc">Shows next to your posts and comments on Sharing.</div></div>
+      <form method="post" action="/settings/avatar" enctype="multipart/form-data">
+        <label class="btn-link subtle" style="cursor:pointer">
+          <input type="file" name="avatar" accept="image/*" class="sr-only" data-avatar-input>
+          {{ "Change" if me.avatar else "Choose a photo" }}
+        </label>
+        <input type="file" name="avatar_thumb" hidden>
+        <noscript><button type="submit" class="subtle">Upload</button></noscript>
+      </form>
+      {% if me.avatar %}
+      <form method="post" action="/settings/avatar/delete"><button type="submit" class="ghost">Remove</button></form>
+      {% endif %}
+    </div>
+    <details class="setting pw-change"{% if pw_error %} open{% endif %}>
+      <summary><div class="lbl">Change your password</div><div class="desc">Signs you out on your other devices.</div></summary>
+      {% if pw_error %}<p class="notice">{{ pw_error }}</p>{% endif %}
+      <form method="post" action="/settings/password" class="stack-form">
+        <input type="password" name="current" placeholder="Current password" autocomplete="current-password" required>
+        <input type="password" name="new" placeholder="New password (at least 10 characters)" autocomplete="new-password" minlength="10" required>
+        <input type="password" name="again" placeholder="New password again" autocomplete="new-password" minlength="10" required>
+        <button type="submit">Change password</button>
+      </form>
+    </details>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

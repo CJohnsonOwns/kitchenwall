@@ -1,0 +1,107 @@
+{% from "_composer.html" import composer %}
+{% if error and error != "Reply sent." %}<p class="notice">{{ error }}</p>{% endif %}
+{% if sent %}<p class="notice good">Sent.</p>{% endif %}
+{% if thread %}
+{% set t = thread %}
+{% set i_reply %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 8V4L3 11l7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>{% endset %}
+{% set i_replyall %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V5l-7 7 7 7v-3l-4-4 4-4zm6 1V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>{% endset %}
+{% set i_forward %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 8V4l7 7-7 7v-4.1c-5 0-8.5 1.6-11 5.1 1-5 4-10 11-11z"/></svg>{% endset %}
+<div class="thread{% if pane %} in-pane{% endif %}" id="thread" data-keys="{{ t.keys_csv }}" data-view="{{ t.view }}" data-account="{{ t.account.id }}">
+
+  <div class="thread-toolbar" role="toolbar" aria-label="Conversation actions">
+    <div class="tb-group reply-group">
+      <button type="button" class="tb-btn tb-primary" data-quick="reply" title="Reply (r)">{{ i_reply }}<span>Reply</span></button>
+      <button type="button" class="tb-btn" data-quick="replyall" title="Reply all (a)">{{ i_replyall }}<span>Reply all</span></button>
+      <button type="button" class="tb-btn" data-quick="forward" title="Forward (f)">{{ i_forward }}<span>Forward</span></button>
+    </div>
+    <div class="tb-group">
+      {% if t.in_inbox %}
+        <button type="button" class="tb-btn" data-thread-action="archive" title="Archive (e)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></svg><span>Archive</span></button>
+      {% else %}
+        <button type="button" class="tb-btn" data-thread-action="inbox" title="Move to inbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/></svg><span>To inbox</span></button>
+      {% endif %}
+      <button type="button" class="tb-btn" data-thread-action="trash" title="Delete (#)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span>Delete</span></button>
+      <button type="button" class="tb-btn" data-thread-action="unread" title="Mark unread (Shift+U)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span>Unread</span></button>
+      <button type="button" class="tb-btn star-toggle{% if t.starred %} on{% endif %}" data-thread-action="{{ 'unstar' if t.starred else 'star' }}" aria-pressed="{{ 'true' if t.starred else 'false' }}" title="Star (s)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg><span>{{ "Starred" if t.starred else "Star" }}</span></button>
+      {% if t.messages|length > 1 %}
+        <button type="button" class="tb-btn" data-expand-all title="Expand or collapse every message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></svg><span>Expand all</span></button>
+      {% endif %}
+      {% if pane %}<a class="tb-btn" href="/inbox/m/{{ t.account.id }}/{{ t.focus_uid }}?view={{ t.view }}" title="Open full page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-8 8M10 5H5a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-5"/></svg><span>Full page</span></a>{% endif %}
+    </div>
+  </div>
+
+  <h1 class="thread-subject">{{ t.subject }}</h1>
+  <p class="thread-meta small muted"><span class="acct-dot" style="--acct: {{ t.account_color }};"></span> {{ t.account.display_name }} · {{ t.messages|length }} message{{ "s" if t.messages|length != 1 }}</p>
+
+  {% for m in t.messages %}
+    <article class="msg{% if m.expanded %} expanded{% endif %}" data-uid="{{ m.uid }}"
+             data-compose='{{ m.compose|tojson }}' data-headers='{{ {"from": m.headers.from, "to": m.headers.to, "cc": m.headers.cc, "date": m.date, "subject": m.headers.subject}|tojson }}'
+             data-forwardable='{{ m.forwardable|tojson }}'>
+      <template class="msg-plain">{{ m.plain }}</template>
+      <header class="msg-head" tabindex="0" role="button" aria-expanded="{{ 'true' if m.expanded else 'false' }}">
+        <span class="avatar">{{ m.initial }}</span>
+        <div class="msg-who">
+          <div><b>{{ m.from_name }}</b> <span class="muted small">{{ m.from_addr }}</span></div>
+          <div class="msg-to small muted">to {{ m.to or "(no recipients)" }}{% if m.cc %}<br>cc {{ m.cc }}{% endif %}</div>
+          <div class="msg-snippet small muted">{{ m.snippet }}</div>
+        </div>
+        <div class="msg-side">
+          <div class="msg-date small muted" title="{{ m.date }}">{% if m.attachments %}<span class="clip" aria-label="Has attachments">📎</span>{% endif %}{{ m.short_date }}</div>
+          <div class="msg-tools">
+            <button type="button" class="icon-btn" data-mode="reply" title="Reply to this message" aria-label="Reply to this message">{{ i_reply }}</button>
+            <button type="button" class="icon-btn" data-mode="replyall" title="Reply all to this message" aria-label="Reply all to this message">{{ i_replyall }}</button>
+            <button type="button" class="icon-btn" data-mode="forward" title="Forward this message" aria-label="Forward this message">{{ i_forward }}</button>
+          </div>
+        </div>
+      </header>
+      <div class="msg-body">
+        {% if m.srcdoc %}
+          {% if m.has_remote %}
+            <div class="images-bar" data-sender="{{ m.from_addr|lower }}">
+              <span>Images are hidden so the sender can't tell you opened this.</span>
+              <button type="button" class="ghost" data-show-images>Show images</button>
+              {% if m.from_addr %}<button type="button" class="ghost" data-always-images>Always show from {{ m.from_addr }}</button>{% endif %}
+            </div>
+          {% endif %}
+          <iframe class="message-body-frame" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" srcdoc="{{ m.srcdoc }}" title="Message from {{ m.from_name }}"></iframe>
+        {% else %}
+          <div class="message-text">{{ m.text|linkify }}</div>
+          {% if m.quoted %}
+            <details class="quoted"><summary title="Show quoted text">···</summary><div class="message-text">{{ m.quoted|linkify }}</div></details>
+          {% endif %}
+        {% endif %}
+
+        {% if m.attachments %}
+          <ul class="attachments">
+            {% for a in m.attachments %}
+              <li class="attachment{% if a.is_image %} is-image{% endif %}">
+                {% if a.is_image %}<a href="{{ a.url }}" target="_blank" rel="noopener" class="att-thumb"><img src="{{ a.url }}" alt="{{ a.filename }}" loading="lazy"></a>{% endif %}
+                <div class="att-info">
+                  <span class="att-name" title="{{ a.filename }}">{{ a.filename }}</span>
+                  <span class="small muted">{{ a.size_h }}</span>
+                </div>
+                <div class="att-ops">
+                  {% if a.mime == "application/pdf" or a.is_image %}<a href="{{ a.url }}" target="_blank" rel="noopener" class="btn-link ghost">Open</a>{% endif %}
+                  <a href="{{ a.download_url }}" class="btn-link ghost">Download</a>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </article>
+  {% endfor %}
+
+  {{ composer(t.accounts, t.account.id, "/inbox/m/" ~ t.account.id ~ "/" ~ t.focus_uid ~ "?view=" ~ t.view, thread=t, form_id="thread-composer") }}
+
+  {% if not pane %}
+    <nav class="thread-bottom-bar" aria-label="Quick actions">
+      <button type="button" data-quick="reply">{{ i_reply }}<span>Reply</span></button>
+      <button type="button" data-quick="replyall">{{ i_replyall }}<span>Reply all</span></button>
+      <button type="button" data-quick="forward">{{ i_forward }}<span>Forward</span></button>
+      {% if t.in_inbox %}<button type="button" data-thread-action="archive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></svg><span>Archive</span></button>{% endif %}
+      <button type="button" data-thread-action="trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span>Delete</span></button>
+    </nav>
+  {% endif %}
+</div>
+{% endif %}

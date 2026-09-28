@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  {% include "_head.html" %}
+  <title>Log in — Kitchenwall</title>
+</head>
+<body>
+  <main class="login-wrap">
+    <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 22 L80 47 L72 47 L72 78 L55 78 L55 60 L45 60 L45 78 L28 78 L28 47 L20 47 Z" fill="#1a1305"/></svg></span>
+    <h1>Household</h1>
+    {% if users %}
+    <p class="hint">Who's this?</p>
+    {% else %}
+    <p class="hint">Enter the household password to continue.</p>
+    {% endif %}
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="post" action="/login" class="login-form">
+      {% if users %}
+      <fieldset class="login-who">
+        <legend class="sr-only">Sign in as</legend>
+        {% for u in users %}
+        <label><input type="radio" name="username" value="{{ u.username }}" required
+          {% if username|lower == u.username|lower %}checked{% endif %}><span>{{ u.display_name }}</span></label>
+        {% endfor %}
+        <label><input type="radio" name="username" value="household"
+          {% if username|lower == "household" %}checked{% endif %}><span>Household</span></label>
+      </fieldset>
+      {% endif %}
+      <label for="password" class="sr-only">Password</label>
+      <input type="password" id="password" name="password" placeholder="{{ 'Password' if users else 'Household password' }}" {% if not users or username %}autofocus{% endif %} required autocomplete="current-password">
+      <button type="submit">Log in</button>
+    </form>
+  </main>
+  <script src="{{ static_url('login.js') }}" defer></script>
+</body>
+</html>

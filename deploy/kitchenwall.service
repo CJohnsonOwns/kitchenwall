@@ -1,0 +1,53 @@
+# Install to /etc/systemd/system/kitchenwall.service (see README).
+# Runs as the kitchenwall user from ~kitchenwall/kitchenwall. The sandbox lines stop a compromised app from
+# touching anything outside its own data folder (it can read its code and
+# write only data/ and .env), gaining privileges, or reading your SSH keys.
+[Unit]
+Description=Kitchenwall
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=kitchenwall
+Group=kitchenwall
+WorkingDirectory=/home/kitchenwall/kitchenwall
+# --proxy-headers: trust X-Forwarded-For only from a proxy on this machine.
+# Keep-alive short so idle phones don't hold connections.
+ExecStart=/home/kitchenwall/kitchenwall/.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=127.0.0.1 --no-server-header --timeout-keep-alive 5
+Restart=on-failure
+RestartSec=5
+UMask=0077
+
+# --- sandboxing ---
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/kitchenwall/kitchenwall/data /home/kitchenwall/kitchenwall/.env
+InaccessiblePaths=-/home/kitchenwall/.ssh -/home/kitchenwall/.gnupg
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+ProtectProc=invisible
+MemoryDenyWriteExecute=yes
+RestrictNamespaces=yes
+
+# --- resource limits (a runaway request can't take the whole server down) ---
+MemoryMax=1G
+TasksMax=256
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

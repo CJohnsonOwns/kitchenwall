@@ -1,0 +1,15 @@
+# Settings come from .env (install.sh writes it): TZ, KW_PORT, KW_UID/KW_GID.
+services:
+  kitchenwall:
+    build: .
+    container_name: kitchenwall
+    restart: unless-stopped
+    user: "${KW_UID:-1000}:${KW_GID:-1000}"   # owner of ./data and ./.env on the host
+    ports:
+      - "${KW_PORT:-8000}:8000"
+    environment:
+      TZ: ${TZ:-Etc/UTC}
+      # FORWARDED_ALLOW_IPS: "*"     # only if a reverse proxy in front of it sets X-Forwarded-For
+    volumes:
+      - ./data:/app/data             # database, photos, videos: back this folder up
+      - ./.env:/app/.env             # secrets; the app adds its mail encryption key here on first run

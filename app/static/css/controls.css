@@ -1,0 +1,77 @@
+/* ---- Controls ---- */
+button, input, select, textarea { font-family: var(--font); font-size: inherit; }
+button {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 11px 18px;
+  min-height: 44px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-linear), transform var(--dur-fast) var(--ease-linear), box-shadow var(--dur) var(--ease);
+}
+button:hover { background: var(--accent-strong); box-shadow: 0 6px 16px rgba(0, 0, 0, .3); }
+button:active { transform: scale(.96); }
+button.subtle, .btn-link.subtle { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); font-weight: 600; }
+button.subtle:hover, .btn-link.subtle:hover { background: var(--surface-3); box-shadow: none; }
+button.subtle[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.ghost, .btn-link.ghost { background: none; color: var(--ink-soft); padding: 8px 10px; font-weight: 600; border: 0; }
+button.ghost:hover, .btn-link.ghost:hover { background: var(--surface-2); color: var(--ink); box-shadow: none; }
+button.danger { background: var(--danger); color: #fff; }
+.danger-text { color: var(--ink-mute) !important; }
+.danger-text:hover { color: var(--danger) !important; }
+button.icon, .btn-link.icon { width: 44px; height: 44px; padding: 0; display: inline-grid; place-items: center; font-size: 1.3rem; line-height: 1; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+.btn-link {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: var(--accent); color: var(--accent-ink);
+  border-radius: var(--radius-sm); padding: 11px 18px; min-height: 44px;
+  text-decoration: none; font-weight: 700;
+  transition: background var(--dur-fast) var(--ease-linear), transform var(--dur-fast) var(--ease-linear);
+}
+.btn-link:hover { background: var(--accent-strong); }
+.btn-link:active { transform: scale(.96); }
+.ghost-link { color: var(--ink-soft); text-decoration: none; font-weight: 600; font-size: .86rem; padding: 6px 8px; border-radius: 8px; }
+.ghost-link:hover { color: var(--ink); background: var(--surface-3); }
+
+input[type="text"], input[type="search"], input[type="email"], input[type="password"], input[type="number"], input[type="date"], select, textarea {
+  padding: 11px 13px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  border-radius: var(--radius-sm);
+  font-weight: 400;
+}
+textarea { resize: vertical; line-height: 1.45; }
+input::placeholder, textarea::placeholder { color: var(--ink-mute); }
+input[type="search"]::-webkit-search-cancel-button { filter: invert(.8); }
+
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; margin: 0; }
+.seg button { background: none; color: var(--ink-soft); padding: 8px 14px; min-height: 38px; font-size: .9rem; border-radius: 7px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px; }
+.seg button:hover { box-shadow: none; background: var(--surface-2); color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg button[aria-pressed="true"] .acct-dot { box-shadow: 0 0 0 1.5px var(--accent-ink); }
+
+.stacked { display: flex; flex-direction: column; gap: 10px; }
+.stacked label { display: flex; flex-direction: column; gap: 5px; font-size: .84rem; font-weight: 600; color: var(--ink-soft); }
+.form-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.card.narrow { max-width: 520px; }
+.delete-row { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+
+.notice {
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  color: var(--ink);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: .92rem;
+  font-weight: 600;
+  margin: 0 0 14px;
+}
+.notice.good { border-color: var(--good); }
+.error { color: var(--danger); font-weight: 600; }

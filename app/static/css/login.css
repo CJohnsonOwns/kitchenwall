@@ -1,0 +1,28 @@
+/* ---- Login ---- */
+.login-wrap {
+  max-width: 360px;
+  margin: 14vh auto 0;
+  padding: 30px 26px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-align: center;
+  animation: card-in var(--dur) var(--ease-linear);
+}
+.login-wrap .brand-mark { margin: 0 auto 14px; }
+.login-wrap h1 { margin: 0; }
+.login-wrap .hint { margin: 6px 0 0; }
+.brand-mark { width: 44px; height: 44px; border-radius: 12px; background: var(--accent); display: grid; place-items: center; box-shadow: 0 0 0 5px var(--accent-soft); }
+.brand-mark svg { width: 26px; height: 26px; }
+.login-form { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.login-wrap .error { margin: 12px 0 0; }
+.login-who { display: flex; gap: 8px; border: 0; padding: 0; margin: 0; }
+.login-who label { flex: 1; }
+.login-who input { position: absolute; opacity: 0; pointer-events: none; }
+.login-who span {
+  display: grid; place-items: center; min-height: 52px; padding: 0 8px; border-radius: var(--radius-sm);
+  background: var(--surface-2); border: 1px solid var(--line); font-weight: 700; cursor: pointer;
+}
+.login-who label:last-child span { color: var(--ink-soft); font-weight: 600; }
+.login-who input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.login-who input:focus-visible + span { outline: 2px solid var(--accent-strong); outline-offset: 2px; }

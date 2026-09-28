@@ -1,0 +1,53 @@
+{% macro wicon(kind, cls="wicon") -%}
+{% if kind == "clear" -%}
+<svg class="{{ cls }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6" stroke-linecap="round"/></svg>
+{%- elif kind == "rain" -%}
+<svg class="{{ cls }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M7 15a4 4 0 1 1 1-7.9A5 5 0 0 1 18 9a3.5 3.5 0 0 1-.5 7H7Z"/><path d="M8 19l-1 2M12 19l-1 2M16 19l-1 2" stroke-linecap="round"/></svg>
+{%- elif kind == "snow" -%}
+<svg class="{{ cls }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M7 14a4 4 0 1 1 1-7.9A5 5 0 0 1 18 8a3.5 3.5 0 0 1-.5 7H7Z"/><path d="M8 18v3M8 21l-1-1M8 21l1-1M12 19v3M12 22l-1-1M12 22l1-1M16 18v3M16 21l-1-1M16 21l1-1" stroke-linecap="round"/></svg>
+{%- elif kind == "storm" -%}
+<svg class="{{ cls }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M7 13a4 4 0 1 1 1-7.9A5 5 0 0 1 18 7a3.5 3.5 0 0 1-.5 7H7Z"/><path d="M12 15l-2 4h3l-2 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+{%- else -%}
+<svg class="{{ cls }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M7 17a4 4 0 1 1 1-7.9A5 5 0 0 1 18 11a3.5 3.5 0 0 1-.5 7H7Z"/></svg>
+{%- endif %}
+{%- endmacro %}
+
+{% macro recur() -%}
+<svg class="rec" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-label="repeats" role="img"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+{%- endmacro %}
+
+{% macro tick_form(item_id, next_url, label="Mark done") -%}
+<form method="post" action="/calendar/{{ item_id }}/toggle-paid" class="tick-form">
+  <input type="hidden" name="next" value="{{ next_url }}">
+  <button type="submit" class="tick" title="{{ label }}" aria-label="{{ label }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></button>
+</form>
+{%- endmacro %}
+
+{% macro note(item, categories_by_id, readonly=False) -%}
+<div class="sticky-note age-{{ item['age_stage'] }}{% if readonly %} readonly{% endif %}"
+     data-id="{{ item['id'] }}"
+     data-categories="{{ item['category_ids']|join(',') }}"
+     style="left: {{ item['x'] }}px; top: {{ item['y'] }}px; --note: {{ item['color'] }}; {{ item['wear'] }}"{% if not readonly %} tabindex="0"{% endif %}>
+  <span class="sticky-fold" aria-hidden="true"></span>
+  <div class="sticky-head">
+    {% if not readonly %}<input type="checkbox" class="sticky-checkbox" aria-label="Done">{% endif %}
+    <span class="sticky-text">{{ item["text"] }}</span>
+  </div>
+  {% if item["photo"] %}<img class="sticky-photo" src="/board/photos/{{ item['photo'] }}?size=thumb" data-full="/board/photos/{{ item['photo'] }}"
+       alt="Photo on this note" loading="lazy" draggable="false"{% if not readonly %} tabindex="0" role="button" title="View full size"{% endif %}>{% endif %}
+  <div class="sticky-cats">
+    {%- for cid in item["category_ids"] %}{% set c = categories_by_id[cid] %}<span class="cat-chip" style="--cat: {{ c['color'] }};">{{ c["name"] }}</span>{% endfor -%}
+  </div>
+  {% if item["created_by"] %}<div class="sticky-author">— {{ item["created_by"] }}</div>{% endif %}
+  {% if not readonly %}
+  <div class="sticky-tools">
+    <button type="button" class="sticky-edit" title="Edit text" aria-label="Edit text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+    <button type="button" class="sticky-tag-btn" title="Categorize" aria-label="Categorize" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 2h5.6l6.4 6.4-5.6 5.6L2 7.6V2z" stroke-linejoin="round"/><circle cx="5" cy="5" r="1.2" fill="currentColor"/></svg></button>
+    <button type="button" class="sticky-photo-btn" title="{{ 'Replace photo' if item['photo'] else 'Add a photo' }}" aria-label="{{ 'Replace photo' if item['photo'] else 'Add a photo' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+    <form method="post" action="/board/items/{{ item['id'] }}/delete" class="sticky-delete-form" data-confirm="Delete this note?">
+      <button type="submit" class="sticky-delete" title="Delete" aria-label="Delete">×</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{%- endmacro %}

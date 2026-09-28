@@ -1,0 +1,13 @@
+{#- Shared <head> lines for every page (base.html, login.html, password.html).
+    CSS: style.css holds the tokens; css/*.css one file per area, loaded in this
+    order on every page (order = the cascade, so keep new files at the end). -#}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+  <meta name="theme-color" content="#13161c">
+  <link rel="preload" href="/static/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+{%- for f in CSS_FILES %}
+  <link rel="stylesheet" href="{{ static_url(f) }}">
+{%- endfor %}

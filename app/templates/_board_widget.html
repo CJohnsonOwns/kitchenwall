@@ -1,0 +1,151 @@
+{% from "_icons.html" import note %}
+{% if photo_error %}<p class="notice" role="alert">The note was added, but not its photo: {{ photo_error }}</p>{% endif %}
+<form method="post" action="/board/items" class="composer" id="composer" enctype="multipart/form-data">
+  <input type="text" name="text" placeholder="Write a note…" aria-label="Note text" maxlength="500" required>
+  <div class="swatches" role="radiogroup" aria-label="Note colour">
+    {% for hex, label in note_colors %}
+      <label class="swatch-radio" title="{{ label }}">
+        <input type="radio" name="color" value="{{ hex }}" {% if loop.first %}checked{% endif %} aria-label="{{ label }}">
+        <span style="--sw: {{ hex }};"></span>
+      </label>
+    {% endfor %}
+  </div>
+  <input type="text" name="created_by" placeholder="Your name (optional)" class="author-input" maxlength="40">
+  <span class="attached" id="composer-attached" hidden>
+    <img alt="" id="composer-attached-img"><span id="composer-attached-name"></span>
+    <button type="button" class="ghost" id="composer-attached-clear" aria-label="Remove photo">×</button>
+  </span>
+  <label class="btn-link subtle photo-btn" title="Attach a photo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="lbl">Photo</span>
+    <input type="file" name="photo" id="composer-photo" accept="image/*" class="sr-only">
+  </label>
+  <input type="file" name="photo_thumb" id="composer-photo-thumb" hidden>
+  <button type="submit">Add</button>
+  {% if categories %}
+    <div class="cat-picker" role="group" aria-label="Categories for this note">
+      {% for c in categories %}
+        <label class="cat-toggle">
+          <input type="checkbox" name="category_ids" value="{{ c['id'] }}">
+          <span class="cat-chip" style="--cat: {{ c['color'] }};">{{ c["name"] }}</span>
+        </label>
+      {% endfor %}
+    </div>
+  {% endif %}
+</form>
+
+<div class="cat-filter" id="cat-filter" role="group" aria-label="Show notes by category">
+  {% if categories %}
+    <span class="lbl">Show</span>
+    <button type="button" class="subtle" data-filter="" aria-pressed="true">All</button>
+    {% for c in categories %}
+      <button type="button" class="subtle catf" data-filter="{{ c['id'] }}" aria-pressed="false" style="--cat: {{ c['color'] }};">
+        <span class="cat-dot"></span>{{ c["name"] }}
+      </button>
+    {% endfor %}
+  {% endif %}
+  <input type="search" class="search" id="note-search" placeholder="Search notes" aria-label="Search notes">
+</div>
+
+<dialog id="cat-manager" class="cat-manager" aria-labelledby="cat-manager-title">
+  <div class="cat-manager-head">
+    <h2 id="cat-manager-title">Categories</h2>
+    <form method="dialog"><button type="submit" class="ghost" aria-label="Close">✕</button></form>
+  </div>
+  <p class="hint">Colour-code notes however you like. Deleting a category only removes its label; the notes stay.</p>
+  {% if cat_error == "duplicate" %}
+    <p class="cat-error" role="alert">There's already a category with that name.</p>
+  {% endif %}
+
+  {% for c in categories %}
+    <form method="post" action="/board/categories/{{ c['id'] }}" class="cat-row">
+      <div class="cat-swatches" role="radiogroup" aria-label="Colour">
+        {% for hex, label in category_colors %}
+          <label class="swatch-radio" title="{{ label }}">
+            <input type="radio" name="color" value="{{ hex }}" {% if c['color'] == hex %}checked{% endif %} aria-label="{{ label }}">
+            <span style="--sw: {{ hex }};"></span>
+          </label>
+        {% endfor %}
+      </div>
+      <div class="cat-row-main">
+        <input type="text" name="name" value="{{ c['name'] }}" maxlength="30" required aria-label="Category name">
+        <button type="submit" class="subtle">Save</button>
+        <button type="submit" class="ghost danger-text" formaction="/board/categories/{{ c['id'] }}/delete"
+                formnovalidate data-confirm="Delete this category? Notes keep their text, just not this label.">Delete</button>
+      </div>
+    </form>
+  {% else %}
+    <p class="empty">No categories yet. Add your first one below.</p>
+  {% endfor %}
+
+  <form method="post" action="/board/categories" class="cat-row cat-row-new">
+    <div class="cat-swatches" role="radiogroup" aria-label="Colour">
+      {% for hex, label in category_colors %}
+        <label class="swatch-radio" title="{{ label }}">
+          <input type="radio" name="color" value="{{ hex }}" {% if loop.index0 == (categories|length) % (category_colors|length) %}checked{% endif %} aria-label="{{ label }}">
+          <span style="--sw: {{ hex }};"></span>
+        </label>
+      {% endfor %}
+    </div>
+    <div class="cat-row-main">
+      <input type="text" name="name" placeholder="New category, e.g. Groceries" maxlength="30" required aria-label="New category name">
+      <button type="submit">Add</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="photo-viewer" class="photo-viewer" aria-label="Photo">
+  <img id="pv-img" alt="">
+  <p class="pv-caption" id="pv-caption"></p>
+  <div class="pv-actions">
+    <a class="btn-link subtle" id="pv-open" href="#" target="_blank" rel="noopener">Open original</a>
+    <label class="btn-link subtle">Replace photo<input type="file" id="pv-replace" accept="image/*" class="sr-only"></label>
+    <button type="button" class="ghost danger-text" id="pv-remove">Remove photo</button>
+    <form method="dialog"><button type="submit" class="subtle">Close</button></form>
+  </div>
+</dialog>
+<input type="file" id="note-photo-input" accept="image/*" hidden>
+
+<script type="application/json" id="board-categories">{{ categories|tojson }}</script>
+
+<div id="board-frame" class="board-frame">
+  <div id="board" class="whiteboard">
+    <div class="board-tools" id="board-tools">
+      <button type="button" class="subtle" id="mode-arrange" aria-pressed="true">Arrange</button>
+      <button type="button" class="subtle" id="mode-draw" aria-pressed="false">Draw</button>
+      <span class="sep"></span>
+      <div class="pens" id="doodle-swatches" role="radiogroup" aria-label="Pen colour">
+        <button type="button" class="pen" style="--sw:#d9a441" data-color="#d9a441" aria-pressed="true" aria-label="Amber pen"></button>
+        <button type="button" class="pen" style="--sw:#e7e2d6" data-color="#e7e2d6" aria-pressed="false" aria-label="Chalk pen"></button>
+        <button type="button" class="pen" style="--sw:#c96a5a" data-color="#c96a5a" aria-pressed="false" aria-label="Red pen"></button>
+        <button type="button" class="pen" style="--sw:#5b8a72" data-color="#5b8a72" aria-pressed="false" aria-label="Green pen"></button>
+      </div>
+      <div class="widths" id="doodle-widths" role="radiogroup" aria-label="Pen width">
+        <button type="button" data-width="2" aria-pressed="false" aria-label="Thin"><i style="width:4px;height:4px"></i></button>
+        <button type="button" data-width="4" aria-pressed="true" aria-label="Medium"><i style="width:7px;height:7px"></i></button>
+        <button type="button" data-width="7" aria-pressed="false" aria-label="Thick"><i style="width:11px;height:11px"></i></button>
+      </div>
+      <span class="sep"></span>
+      <form method="post" action="/board/strokes/undo" id="undo-form"><button type="submit" class="subtle">Undo</button></form>
+      <form method="post" action="/board/strokes/clear" data-confirm="Clear all doodles?"><button type="submit" class="subtle">Clear doodles</button></form>
+    </div>
+
+    <div id="board-canvas" class="board-canvas">
+      <svg id="doodle-layer" class="doodle-layer" width="2400" height="1600">
+        {% for s in strokes %}
+          <path d="{{ s['path'] }}" stroke="{{ s['color'] }}" stroke-width="{{ s['width'] }}" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+        {% endfor %}
+      </svg>
+      {% for item in items %}{{ note(item, categories_by_id) }}{% endfor %}
+    </div>
+
+    <div class="board-zoom-controls">
+      <button type="button" class="subtle" id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
+      <button type="button" class="subtle" id="zoom-reset" title="Reset view">100%</button>
+      <button type="button" class="subtle" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+      <button type="button" class="subtle" id="board-expand" title="Fullscreen">Expand</button>
+    </div>
+  </div>
+  <p class="board-hint">Drag notes to arrange, drag empty space to pan, pinch or scroll to zoom. Hover or tap a note for edit, categorize and delete. Notes crease and fade the longer nobody touches them; moving or editing one smooths it out again.</p>
+</div>
+
+<script type="module" src="{{ static_url('js/board/main.js') }}"></script>
